@@ -13,9 +13,11 @@
 		- [Turning on a Feature with `@ConfigurationProperties`](#turning-on-a-feature-with-configurationproperties)
 		- [Reinitializing Beans with `@RefreshScope`](#reinitializing-beans-with-refreshscope)
 		- [Override Configuration Values By Profile](#override-configuration-values-by-profile)
-		- [Deploy the `config-server` and `greeting-config` apps to PCF](#deploy-the-config-server-and-greeting-config-apps-to-pcf)
+		- [Deploy the `config-server` and `greeting-config` Apps to PCF](#deploy-the-config-server-and-greeting-config-apps-to-pcf)
 		- [Refreshing Application Configuration at Scale with Cloud Bus](#refreshing-application-configuration-at-scale-with-cloud-bus)
 <!-- /TOC -->
+
+Estimated Time: 60 minutes
 
 ## Requirements
 
@@ -93,7 +95,7 @@ Note the `@EnableConfigServer` annotation.  That embeds the config-server.
 ```
 Make sure to substitute your forked app-config repository. Do not use the literal above.
 
-4) Start the `config-server`.
+4) Open a terminal window and start the `config-server`.
 
 ```bash
 $ cd $CLOUD_NATIVE_APP_LABS_HOME/config-server
@@ -110,7 +112,7 @@ name: <Your Name>
 
 6) Confirm the `config-server` is up and configured with a backing git repository by calling one of its [endpoints](http://projects.spring.io/spring-cloud/docs/1.0.3/spring-cloud.html#_quick_start).  Because the returned payload is JSON, we recommend using something that will pretty-print the document.  A good tool for this is the Chrome [JSON Formatter](https://chrome.google.com/webstore/detail/json-formatter/bcjindcccaagfpapjjmafapmmgkkhgoa?hl=en) plug-in.
 
-Open a browser window fetch the following url: [http://localhost:8888/hello-world/default](http://localhost:8888/hello-world/default)
+Open a browser window and fetch the following url: [http://localhost:8888/hello-world/default](http://localhost:8888/hello-world/default)
 
 ![Config Server - API](resources/images/api.png "Config Server - API")
 
@@ -118,7 +120,7 @@ Open a browser window fetch the following url: [http://localhost:8888/hello-worl
 
 The `config-server` exposes several [endpoints](http://projects.spring.io/spring-cloud/docs/1.0.3/spring-cloud.html#_quick_start) to fetch configuration.
 
-In this case, we are manually calling one of those endpoints (`/{application}/{profile}[/{label}]`) to fetch configuration.  In this case, we substituted our example client application `hello-world` as the `{application}` and the `default` profile as the `{profile}`.  We didn't specify the label to use so `master` is assumed.  In the returned document, we see the configuration file `hello-world.yml` listed as a `propertySource` with the associated key/value pair.  This is just an example, as you move through the lab you will add configuration for `greeting-config` our client application.
+In this case, we are manually calling one of those endpoints (`/{application}/{profile}[/{label}]`) to fetch configuration.  We substituted our example client application `hello-world` as the `{application}` and the `default` profile as the `{profile}`.  We didn't specify the label to use so `master` is assumed.  In the returned document, we see the configuration file `hello-world.yml` listed as a `propertySource` with the associated key/value pair.  This is just an example, as you move through the lab you will add configuration for `greeting-config` (our client application).
 
 
 ### Set up `greeting-config`
@@ -175,7 +177,7 @@ Configuration parameters/values will be added as we move through the lab.
 
 As your first use of the config-server, you will change the logging level of the greeting-config application.
 
-1) View the getGreeting() method of  `$CLOUD_NATIVE_APP_LABS_HOME/greeting-config/src/main/java/io/pivotal/greeting/GreetingController.java`
+1) View the `getGreeting()` method of the `GreetingController` class (`$CLOUD_NATIVE_APP_LABS_HOME/greeting-config/src/main/java/io/pivotal/greeting/GreetingController.java`).
  ```java
 @RequestMapping("/")
 String getGreeting(Model model){
@@ -209,13 +211,14 @@ quoteServiceURL: http://quote-service-dev.cfapps.io/quote
 ```
 This file has several configuration parameters that will be used throughout this lab.  For this exercise, we have set the log level for classes in the `io.pivotal` package to `DEBUG`.
 
-3) While watching the `greeting-config` terminal, refresh the [http://localhost:8080](http://localhost:8080/) url.  Notice there are no DEBUG logs yet.
+3) While watching the `greeting-config` terminal, refresh the [http://localhost:8080](http://localhost:8080/) url.  Notice there are no `DEBUG` logs yet.
 
 4) Does the `config-server` see the change in your git repo?  Let's check what the `config-server` is serving.  Browse to [http://localhost:8888/greeting-config/default](http://localhost:8888/greeting-config/default)
 
 ![updated-config](resources/images/updated-config.png "updated-config")
 
-The propertySources value has changed!  The `config-server` has picked up the changes to the git repo.
+The propertySources value has changed!  The `config-server` has picked up the changes to the git repo. (If you don't see the change,
+verify that you have pushed the greeting-config.yml to GitHub.)
 
 5) Review the following file: `$CLOUD_NATIVE_APP_LABS_HOME/greeting-config/pom.xml`.  For the `greeting-config` application to pick up the configuration changes, it must include the `actuator` dependency.  The `actuator` adds several additional endpoints to the application for operational visibility and tasks that need to be carried out.  In this case, we have added the actuator so that we can use the `/refresh` endpoint, which allows us to refresh the application config on demand.
 
@@ -226,7 +229,7 @@ The propertySources value has changed!  The `config-server` has picked up the ch
 </dependency>
 ```
 
-6) For the `greeting-config` application to pick up the configuration changes, it must be told to do so.  Notify `greeting-config` app to pick up the new config by POSTing to the `greeting-config` `/refresh` endpoint.
+6) For the `greeting-config` application to pick up the configuration changes, it must be told to do so.  Notify `greeting-config` app to pick up the new config by POSTing to the `greeting-config` `/refresh` endpoint.  Open a new terminal window and execute the following:
 
 ```bash
 $ curl -X POST http://localhost:8080/refresh
@@ -319,9 +322,9 @@ Congratulations! You have turned on a feature using the config-server.
 
 ### Reinitializing Beans with `@RefreshScope`
 
-Now you will use the config-server to obtain a service uri rather than hardcoding it your application code.
+Now you will use the config-server to obtain a service URI rather than hardcoding it your application code.
 
-Beans annotated with the `@ResfreshScope` will be recreated when refreshed so they can pick up new config values.
+Beans annotated with the `@RefreshScope` will be recreated when refreshed so they can pick up new config values.
 
 1) Review `$CLOUD_NATIVE_APP_LABS_HOME/greeting-config/src/main/java/io/pivotal/quote/QuoteService.java`.  `QuoteService.java` uses the `@RefreshScope` annotation. Beans with the `@RefreshScope` annotation will be recreated when refreshing configuration.  The `@Value` annotation allows for injecting the value of the quoteServiceURL configuration parameter.
 
@@ -383,7 +386,7 @@ Note where the data is being served from: `http://quote-service-dev.cfapps.io/qu
 2) Set the active profile to qa for the `greeting-config` application.  In the example below, we use an environment variable to set the active profile.
 
 ```bash
-[mac]
+[mac, linux]
 $ SPRING_PROFILES_ACTIVE=qa mvn clean spring-boot:run
 
 [windows]
@@ -415,7 +418,7 @@ $ curl -X POST http://localhost:8080/refresh
 
 Configuration from `greeting-config.yml` was overridden by a configuration file that was more specific (`greeting-config-qa.yml`).
 
-### Deploy the `config-server` and `greeting-config` apps to PCF
+### Deploy the `config-server` and `greeting-config` Apps to PCF
 
 1) Package and deploy the `config-server` to PCF.  The `--random-route` flag will generate a random uri for the `config-server`.  Make note of it.  You will use it in the next step. Make sure you are targeting your PCF account and execute the following from
 the `config-server` directory:
@@ -524,10 +527,15 @@ $ cf push greeting-config -p target/greeting-config-0.0.1-SNAPSHOT.jar -i 3
 `/` endpoint several times in your browser and tailing the logs.
 
 ```bash
+[mac, linux]
 $ cf logs greeting-config | grep GreetingController
+
+[windows]
+$ cf logs greeting-config
+# then search output for "GreetingController"
 ```
 
-All app instances are creating debug statements:
+All app instances are creating debug statements.  Notice the `[App/X]`.  It denotes which app instance is logging.
 
 ```
 2015-09-28T20:53:06.07-0500 [App/2]      OUT 2015-09-29 01:53:06.071 DEBUG 34 --- [io-64495-exec-6] io.pivotal.greeting.GreetingController   : Adding fortune
@@ -546,7 +554,7 @@ logging:
       pivotal: INFO
 ```
 
-8) Notify applications to pickup the change.  Send a POST to the `greeting-config` `/bus/refresh` endpoint.  Use your url not the literal below.
+8) Notify applications to pickup the change.  Send a POST to the `greeting-config` `/bus/refresh` endpoint.  Use your `greeting-config` URL not the literal below.
 ```bash
 $ curl -X POST http://greeting-config-hypodermal-subcortex.cfapps.io/bus/refresh
 ```

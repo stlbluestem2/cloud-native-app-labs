@@ -14,6 +14,8 @@
 		- [Deploy `hystrix-dashboard` to PCF](#deploy-hystrix-dashboard-to-pcf)
 <!-- /TOC -->
 
+Estimated Time: 25 minutes
+
 ## Requirements
 
 [Lab Requirements](../requirements.md)
@@ -95,7 +97,7 @@ public class TurbineApplication {
 }
 ```
 
-3). Review the following file: `$CLOUD_NATIVE_APP_LABS_HOME/turbine/src/main/resources/bootstrap.yml`.  `turbine.appConfig` is a list of eureka serviceIds that turbine will use to lookup instances.  `turbine.aggregator.clusterConfig` is the turbine cluster these services belong to (how they will be ).
+3). Review the following file: `$CLOUD_NATIVE_APP_LABS_HOME/turbine/src/main/resources/bootstrap.yml`.  `turbine.appConfig` is a list of Eureka `serviceIds` that Turbine will use to lookup instances.  `turbine.aggregator.clusterConfig` is the Turbine cluster these services belong to (how they will be grouped).
 
 ```yml
 spring:
@@ -126,13 +128,15 @@ $ mvn clean spring-boot:run
 
 8) Experiment! Refresh the `greeting-hystrix` `/` endpoint several times.  Take down the `fortune-service` app.  What does the dashboard do?
 
+9) When done, stop the `config-server`, `service-registry`, `fortune-service`, `greeting-hystrix`, `hystrix-dashboard` and `turbine` applications.
+
 ***What Just Happened?***
 
 Turbine discovered the `greeting-hystrix` application through the `service-registry` application.  Turbine then consumed the `/hystrix.stream` and rolled that up into an aggregate `/turbine.stream`.  Therefore, if we had multiple `greeting-hystrix` applications running all the metrics could be consumed from this single endpoint (`/turbine.stream`)
 
 ### Deploying to PCF
 
-In PCF the classic Turbine model of pulling metrics from all the distributed Hystrix commands doesn’t work.  This is because every application has the same `hostname` (every app instance has the same url).  The problem is solved with Turbine AMQP.  Metrics are published through a message broker.  We'll use RabbitMQ.
+In PCF, the traditional Turbine model of pulling metrics from all the distributed Hystrix enabled applications doesn’t work.  This is because every application has the same `hostname` (every app instance has the same URL for a given app).  The problem is solved with Turbine AMQP.  Metrics are published through a message broker.  We'll use RabbitMQ.
 
 
 ### Deploy `greeting-hystrix` to PCF
@@ -219,6 +223,6 @@ $ mvn clean package
 $ cf push hystrix-dashboard -p target/hystrix-dashboard-0.0.1-SNAPSHOT.jar -m 512M --random-route
 ```
 
-2) Configure the `hystrix-dashboard` (i.e `http://your-hystrix-url/hystrix`) to consume the turbine stream.  Enter your `turbine-amqp` url .
+2) Configure the `hystrix-dashboard` (i.e `http://your-hystrix-url/hystrix`) to consume the turbine stream.  Enter your `turbine-amqp` URL.
 
 3) Experiment! Refresh the `greeting-hystrix` `/` endpoint several times.  Take down the `fortune-service` app.  Scale the `greeting-hystrix` app.  What does the dashboard do?
